@@ -6,7 +6,7 @@ pg.init()
 pg.mixer.init()
 clock = pg.time.Clock()
 
-#snd_擠壓 = pg.mixer.Sound('1.wav')
+snd_擠壓 = pg.mixer.Sound('1.wav')
 snd_彩虹 = pg.mixer.Sound('2.wav')
 彩虹 = False
 
@@ -37,6 +37,9 @@ hands_pos = {}
 
 # 手指ID的起始位置 {id: pos}
 hands_start_pos = {}
+
+cursor_start_x_pos = -1
+cursor_x_accum_rel = 0
 
 while Running:
     
@@ -69,22 +72,39 @@ while Running:
             hands.remove(e.finger_id)
             del(hands_pos[e.finger_id])
             del(hands_start_pos[e.finger_id])
-    
+        elif e.type == pg.MOUSEBUTTONDOWN:
+            if e.button == 1:
+                snd_擠壓.play()
+                彩虹 = False
+                cursor_start_x_pos = e.pos[0]
+                cursor_x_accum_rel = 0
+        elif e.type == pg.MOUSEMOTION:
+            if 1 in e.buttons:
+                cursor_x_accum_rel += e.rel[0]
+                if cursor_x_accum_rel < 0:
+                    cursor_x_accum_rel = 0
+        elif e.type == pg.MOUSEBUTTONUP:
+            if e.button == 1:
+                cursor_x_accum_rel = 0
+                cursor_start_x_pos = -1
     # 壓力值
     hold_pos = 0
 
-    if (len(hands) > 1):
-        h0 = hands_pos[hands[0]]
-        h1 = hands_pos[hands[1]]
-        starth0 = hands_start_pos[hands[0]]
-        starth1 = hands_start_pos[hands[1]]
-        dis = abs(h0.x - h1.x)
-        dxabs = abs(starth0.x - h0.x) + abs(starth1.x - h1.x)
-        #移動的距離越大且兩點間距離越短 壓力越大
-        if dis == 0: #避免Divide by zero
-            hold_pos = 10000
+    if (len(hands) > 1 or cursor_start_x_pos != -1):
+        if (len(hands) > 0):
+            h0 = hands_pos[hands[0]]
+            h1 = hands_pos[hands[1]]
+            starth0 = hands_start_pos[hands[0]]
+            starth1 = hands_start_pos[hands[1]]
+            dis = abs(h0.x - h1.x)
+            dxabs = abs(starth0.x - h0.x) + abs(starth1.x - h1.x)
+            #移動的距離越大且兩點間距離越短 壓力越大
+            if dis == 0: #避免Divide by zero
+                hold_pos = 10000
+            else:
+                hold_pos = dxabs / dis * 350
         else:
-            hold_pos = dxabs / dis * 350 
+            hold_pos = cursor_x_accum_rel * 15
 
         pos_白毛毛.w = max(rect_白毛毛.w - hold_pos, rect_白毛毛.w/2)
     else:
