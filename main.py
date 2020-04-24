@@ -108,6 +108,13 @@ while Running:
                 if len(pic_files) > 8: load_img(8)
             elif e.key == pg.K_0 or e.key == pg.K_KP_0:
                 if len(pic_files) > 9: load_img(9)
+            elif e.key == pg.K_LEFT or e.key == pg.K_UP:
+                if (pic_index == 0):
+                    load_img(len(pic_files) - 1)
+                else:
+                    load_img(pic_index - 1)
+            elif e.key == pg.K_RIGHT or e.key == pg.K_DOWN:
+                load_img((pic_index + 1) % len(pic_files))
             elif e.key == pg.K_SPACE:
                 if (is_rainbow):
                     snd_pinch.play()
