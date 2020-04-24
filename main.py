@@ -6,24 +6,27 @@ pg.init()
 pg.mixer.init()
 clock = pg.time.Clock()
 
-snd_擠壓 = pg.mixer.Sound('1.wav')
-snd_彩虹 = pg.mixer.Sound('2.wav')
-彩虹 = False
+snd_pinch = pg.mixer.Sound('1.wav')
+snd_rainbow = pg.mixer.Sound('2.wav')
+is_rainbow = False
+
+pic_files = [ ["anfauglir.jpg", 0], ["arthvina.jpg", 1], ["eviat.jpg", 0 ], ["思飛球.jpg", 1], ["hsuan.jpg", 0], ["seayas.jpg", 1] ]
+pic_index = 0
 
 # 圖片的加載以及快取原本白毛毛的大小
-表面_白毛毛 = pg.image.load("yeet.jpg")
-表面_白毛毛2 = pg.image.load("yeet2.jpg")
-rect_白毛毛 = 表面_白毛毛.get_rect()
+surface_base = pg.image.load(pic_files[pic_index][0])
+general_rect = surface_base.get_rect()
 
 # 歡樂的SDL2視窗與刷新螢幕顏色
-win = sdl2.Window(size=rect_白毛毛.size)
+win = sdl2.Window(size=general_rect.size)
 renderer = sdl2.Renderer(win)
 renderer.draw_color = (255,255,255,255)
 
 # 將圖片轉換成Image class方便處理
-img_白毛毛 = sdl2.Image(sdl2.Texture.from_surface(renderer, 表面_白毛毛))
-img2_白毛毛 = sdl2.Image(sdl2.Texture.from_surface(renderer, 表面_白毛毛2))
-pos_白毛毛 = rect_白毛毛.copy()
+img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
+img_rainbows = [ sdl2.Image(sdl2.Texture.from_surface(renderer, pg.image.load("rainbow_wolves.png"))), 
+                 sdl2.Image(sdl2.Texture.from_surface(renderer, pg.image.load("rainbow_dragons.png"))) ]
+pos_shaking = general_rect.copy()
 
 # 程式運行標誌及畫格
 Running = True
@@ -57,8 +60,8 @@ while Running:
         elif e.type == pg.FINGERDOWN:
             # 第一根手指放下去時重置吐彩虹狀態 & 播放擠壓聲
             if len(hands) == 0:
-                snd_擠壓.play()
-                彩虹 = False
+                snd_pinch.play()
+                is_rainbow = False
 
             # 紀錄這根手指的位置
             hands.append(e.finger_id)
@@ -74,10 +77,14 @@ while Running:
             del(hands_start_pos[e.finger_id])
         elif e.type == pg.MOUSEBUTTONDOWN:
             if e.button == 1:
-                snd_擠壓.play()
-                彩虹 = False
+                snd_pinch.play()
+                is_rainbow = False
                 cursor_start_x_pos = e.pos[0]
                 cursor_x_accum_rel = 0
+            elif e.button == 3:
+                pic_index = (pic_index + 1) % len(pic_files)
+                surface_base = pg.image.load(pic_files[pic_index][0])
+                img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
         elif e.type == pg.MOUSEMOTION:
             if 1 in e.buttons:
                 cursor_x_accum_rel += e.rel[0]
@@ -106,30 +113,31 @@ while Running:
         else:
             hold_pos = cursor_x_accum_rel * 15
 
-        pos_白毛毛.w = max(rect_白毛毛.w - hold_pos, rect_白毛毛.w/2)
+        pos_shaking.w = max(general_rect.w - hold_pos, general_rect.w/2)
     else:
         # 沒有兩根手指不擠壓
-        pos_白毛毛.w = rect_白毛毛.w
+        pos_shaking.w = general_rect.w
 
     # 設定這隻可愛白毛毛的中心位置
-    if pos_白毛毛.w <= rect_白毛毛.w/2:
-        pos_白毛毛.center = int(win.size[0] / 2 - 10 + frame%2*20), int(win.size[1] / 2)
+    if pos_shaking.w <= general_rect.w/2:
+        pos_shaking.center = int(win.size[0] / 2 - 10 + frame%2*20), int(win.size[1] / 2)
     else:
-        pos_白毛毛.center = int(win.size[0] / 2), int(win.size[1] / 2)
+        pos_shaking.center = int(win.size[0] / 2), int(win.size[1] / 2)
 
     # 擠壓太大力所以吐彩虹
-    if (hold_pos > rect_白毛毛.w*4 and not 彩虹):
-        彩虹 = True
-        snd_彩虹.play()
+    if (hold_pos > general_rect.w*4 and not is_rainbow):
+        is_rainbow = True
+        snd_rainbow.play()
 
     # 繪製區域清除
     renderer.clear()
 
     # 吃一口彩虹，吐一口
-    if 彩虹:
-        img2_白毛毛.draw(dstrect=rect_白毛毛)
+    if is_rainbow:
+        img_base.draw(dstrect=general_rect)
+        img_rainbows[pic_files[pic_index][1]].draw(dstrect=general_rect)
     else:
-        img_白毛毛.draw(dstrect=pos_白毛毛)
+        img_base.draw(dstrect=pos_shaking)
     
     # 刷新畫面
     renderer.present()
