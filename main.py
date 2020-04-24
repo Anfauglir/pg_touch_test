@@ -16,17 +16,38 @@ pic_index = 0
 # 圖片的加載以及快取原本白毛毛的大小
 surface_base = pg.image.load(pic_files[pic_index][0])
 general_rect = surface_base.get_rect()
+surface_rainbow_wolves = pg.image.load("rainbow_wolves.png")
+surface_rainbow_dragons = pg.image.load("rainbow_dragons.png")
 
-# 歡樂的SDL2視窗與刷新螢幕顏色
-win = sdl2.Window(size=general_rect.size)
-renderer = sdl2.Renderer(win)
-renderer.draw_color = (255,255,255,255)
+win = None
+renderer = None
+img_base = None
+img_rainbows = []
+pos_shaking = None
 
-# 將圖片轉換成Image class方便處理
-img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
-img_rainbows = [ sdl2.Image(sdl2.Texture.from_surface(renderer, pg.image.load("rainbow_wolves.png"))), 
-                 sdl2.Image(sdl2.Texture.from_surface(renderer, pg.image.load("rainbow_dragons.png"))) ]
-pos_shaking = general_rect.copy()
+def init_window():
+    global win, renderer, img_base, img_rainbows, pos_shaking
+    # 歡樂的SDL2視窗與刷新螢幕顏色
+    win = sdl2.Window(size=general_rect.size)
+    win.title = str(pic_files[pic_index])
+    renderer = sdl2.Renderer(win)
+    renderer.draw_color = (255,255,255,255)
+    # 將圖片轉換成Image class方便處理
+    img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
+    img_rainbows = [ sdl2.Image(sdl2.Texture.from_surface(renderer, surface_rainbow_wolves)), sdl2.Image(sdl2.Texture.from_surface(renderer, surface_rainbow_dragons)) ]
+    pos_shaking = general_rect.copy()
+
+def load_img(index):
+    global surface_base, img_base, snd_pinch, is_rainbow, win, pic_index
+    pic_index = index
+    surface_base = pg.image.load(pic_files[pic_index][0])
+    img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
+    snd_pinch.play()
+    is_rainbow = False
+    win.title = str(pic_files[pic_index])
+
+
+init_window()
 
 # 程式運行標誌及畫格
 Running = True
@@ -57,6 +78,42 @@ while Running:
             if e.key == pg.K_ESCAPE:
                 Running = False
                 break
+            elif e.key == pg.K_EQUALS:
+                general_rect.width = general_rect.width << 1
+                general_rect.height = general_rect.height << 1
+                win.destroy()
+                init_window()
+            elif e.key == pg.K_MINUS:
+                general_rect.width = general_rect.width >> 1
+                general_rect.height = general_rect.height >> 1
+                win.destroy()
+                init_window()
+            elif e.key == pg.K_1 or e.key == pg.K_KP_1:
+                if len(pic_files) > 0: load_img(0)
+            elif e.key == pg.K_2 or e.key == pg.K_KP_2:
+                if len(pic_files) > 1: load_img(1)
+            elif e.key == pg.K_3 or e.key == pg.K_KP_3:
+                if len(pic_files) > 2: load_img(2)
+            elif e.key == pg.K_4 or e.key == pg.K_KP_4:
+                if len(pic_files) > 3: load_img(3)
+            elif e.key == pg.K_5 or e.key == pg.K_KP_5:
+                if len(pic_files) > 4: load_img(4)
+            elif e.key == pg.K_6 or e.key == pg.K_KP_6:
+                if len(pic_files) > 5: load_img(5)
+            elif e.key == pg.K_7 or e.key == pg.K_KP_7:
+                if len(pic_files) > 6: load_img(6)
+            elif e.key == pg.K_8 or e.key == pg.K_KP_8:
+                if len(pic_files) > 7: load_img(7)
+            elif e.key == pg.K_9 or e.key == pg.K_KP_9:
+                if len(pic_files) > 8: load_img(8)
+            elif e.key == pg.K_0 or e.key == pg.K_KP_0:
+                if len(pic_files) > 9: load_img(9)
+            elif e.key == pg.K_SPACE:
+                if (is_rainbow):
+                    snd_pinch.play()
+                else:
+                    snd_rainbow.play()
+                is_rainbow = is_rainbow ^ True
         elif e.type == pg.FINGERDOWN:
             # 第一根手指放下去時重置吐彩虹狀態 & 播放擠壓聲
             if len(hands) == 0:
@@ -81,10 +138,8 @@ while Running:
                 is_rainbow = False
                 cursor_start_x_pos = e.pos[0]
                 cursor_x_accum_rel = 0
-            elif e.button == 3:
-                pic_index = (pic_index + 1) % len(pic_files)
-                surface_base = pg.image.load(pic_files[pic_index][0])
-                img_base = sdl2.Image(sdl2.Texture.from_surface(renderer, surface_base))
+            elif e.button == 2 or e.button == 3:
+                load_img((pic_index + 1) % len(pic_files))
         elif e.type == pg.MOUSEMOTION:
             if 1 in e.buttons:
                 cursor_x_accum_rel += e.rel[0]
@@ -98,7 +153,7 @@ while Running:
     hold_pos = 0
 
     if (len(hands) > 1 or cursor_start_x_pos != -1):
-        if (len(hands) > 0):
+        if (len(hands) > 1):
             h0 = hands_pos[hands[0]]
             h1 = hands_pos[hands[1]]
             starth0 = hands_start_pos[hands[0]]
